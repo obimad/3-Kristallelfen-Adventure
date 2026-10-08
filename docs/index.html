@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102d39"><title>Die 3 Kristallelfen</title>
+  <link rel="icon" type="image/png" href="Logo-freigestellt.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="navigation.css">
+</head>
+<body>
+  <div class="app">
+    <header class="masthead">
+      <a class="brand" href="#" aria-label="Die 3 Kristallelfen – Startseite"><span class="logo-window brand-logo"><img src="Logo-freigestellt.png" alt="" width="1446" height="1087"></span><span><span class="brand-eyebrow">EIN ABENTEUER IM HIMMELSREICH</span><strong>Die 3 Kristallelfen</strong></span></a>
+      <nav aria-label="Spielbereiche"><button class="nav-button active" id="journey-tab">Finas Reise</button><button class="nav-button" id="battle-tab" hidden>Kampfprobe <span>✧</span></button></nav>
+      <div class="header-tools"><button id="sound-button" class="icon-button" aria-label="Klang einschalten" aria-pressed="false" title="Klang einschalten">♫</button><label class="volume-control" title="Musiklautstärke"><span class="sr-only">Musiklautstärke</span><input id="music-volume" type="range" min="0" max="100" value="35" aria-label="Musiklautstärke"></label><button id="help-button" class="icon-button" aria-label="Spielhilfe öffnen" title="Spielhilfe">?</button></div>
+    </header>
+    <main>
+      <section class="world" aria-label="Spielszene">
+        <canvas id="scene" width="1600" height="900" tabindex="0" aria-label="Fina bewegen: Pfeiltasten oder WASD. Gegenstände mit der Maus wählen oder in der Nähe Enter drücken."></canvas>
+        <div id="hotspots" class="hotspots" aria-label="Interaktionen in Farbenquell" hidden></div>
+        <div class="scene-heading" id="scene-heading" hidden><span class="chapter">KAPITEL I</span><h1>Farbenquell</h1><span class="scene-subtitle">Wo die Farben des Himmels entstehen</span></div>
+        <div class="objective" id="objective" hidden><span class="objective-eyebrow">DEIN NÄCHSTER SCHRITT</span><p id="objective-text"></p><span id="objective-progress"></span></div>
+        <div class="start-screen" id="start-screen">
+          <div class="start-copy"><h1 class="logo-window start-title"><span class="sr-only">Die 3 Kristallelfen</span><img src="Logo-freigestellt.png" alt="" width="1446" height="1087" fetchpriority="high"></h1><span class="chapter">FINAS GESCHICHTE BEGINNT</span><p>Hoch über den Wolken wartet eine Welt voller Magie, Freundschaft und Geheimnisse. Begleite Fina auf ihrem Weg zu den Kristallelfen.</p><button id="start-button" class="gold-button">Das Abenteuer beginnen <span>➜</span></button><button id="resume-button" class="resume-button" hidden>Gespeicherte Reise fortsetzen ➜</button><span class="start-note">Mit Maus oder Pfeiltasten spielen</span></div>
+          <img id="start-fina" class="start-fina" alt="Fina mit ihren zwei Haarbuns, Kristallanhänger und Ring" src="assets/fina.png">
+          <div class="start-chapter"><span>01</span> Abschied aus Farbenquell</div>
+        </div>
+        <section id="opening-intro" class="opening-intro" aria-label="Intro: Ankunft in Farbenquell" hidden>
+          <img class="intro-backdrop" src="assets/farbenquell-animierbar.png" alt="Farbenquell, Finas Dorf hoch in den Wolken" width="1600" height="900">
+          <div class="intro-veil" aria-hidden="true"></div><div class="intro-clouds" aria-hidden="true"></div>
+          <div class="intro-title"><h2 class="logo-window"><span class="sr-only">Die 3 Kristallelfen</span><img src="Logo-freigestellt.png" alt="" width="1446" height="1087"></h2><p>Farbenquell · Hier beginnt Finas Reise</p></div>
+          <button id="skip-intro" class="intro-skip">Intro überspringen ➜</button>
+        </section>
+        <section id="chapter-card" class="chapter-card" aria-labelledby="chapter-card-title" hidden>
+          <img id="chapter-card-image" class="chapter-card-image" alt="Kapitelbild" width="1600" height="900">
+          <div class="chapter-card-copy"><span id="chapter-card-label" class="chapter">KAPITEL 1</span><h2 id="chapter-card-title"></h2><p id="chapter-card-music" role="status">Der Originalsoundtrack begleitet dieses Kapitelbild.</p><button id="chapter-card-next" class="gold-button">Weiter zur Szene ➜</button><small>Die Musik darf ausspielen. Du bestimmst, wann es weitergeht.</small></div>
+        </section>
+        <section id="flight-overlay" class="flight-overlay" aria-label="Flug mit Kian" hidden><canvas id="flight-scene" width="1600" height="900" aria-label="Fina und Kian von hinten: mit Pfeiltasten oder WASD Wolken und Vögeln ausweichen" tabindex="0"></canvas><div id="flight-controls"></div></section>
+        <section id="chase-overlay" class="chase-overlay" aria-label="H und O durch den Markt verfolgen" hidden><canvas id="chase-scene" width="1600" height="900" tabindex="0" aria-label="Markt von oben: Fina muss H und O in den Gängen fangen"></canvas><div id="chase-controls"></div></section>
+        <div id="battle-ui" class="battle-ui" hidden>
+          <div class="battle-heading"><span class="chapter">EINE SEPARATE KAMPFPROBE</span><h1>Der versperrte Wolkenweg</h1><p>Öffnet das Tor und entkommt der Wasserwache.</p><div id="battle-progress" class="battle-progress" aria-label="Fluchtfortschritt"></div></div>
+          <div class="enemy-readout"><span>AUFMERKSAMKEIT DER WACHE</span><meter id="pressure-meter" min="0" max="4" value="0" aria-label="Aufmerksamkeit der Wasserwache"></meter><strong id="pressure-points"></strong></div>
+          <div class="threat"><span id="round-label">ZUG 1</span><p id="threat-text"></p></div>
+          <div class="battle-targets" aria-label="Umgebung benutzen">
+            <button id="valve-button" class="battle-target valve-target"><span aria-hidden="true">◌</span><strong>Wasserventil</strong><small id="valve-state">Zufluss stoppen</small></button>
+            <button id="gate-button" class="battle-target gate-target"><span aria-hidden="true">◇</span><strong>Wolkentor</strong><small id="gate-state">Verriegelt</small></button>
+            <button id="escape-button" class="battle-target escape-target"><span aria-hidden="true">➜</span><strong>Wolkenweg</strong><small id="escape-state">Flucht versuchen</small></button>
+          </div>
+        </div>
+        <div id="toast" class="toast" role="status" hidden></div>
+        <div id="load-error" class="load-error" role="alert" hidden></div>
+      </section>
+      <section id="battle-panel" class="battle-panel" aria-label="Kampfaktionen" hidden>
+        <div class="battle-panel-intro"><span>Dein Zug. Du hast Zeit zum Überlegen.</span><span id="frost-knowledge"></span></div>
+        <div id="battle-selection" class="battle-selection" aria-label="Heldin wählen"></div>
+        <div class="battle-controls"><div><span id="selected-name"></span><small id="selected-description"></small></div><button id="ability-button" class="gold-button"></button><button id="battle-hint-button">✧ Hinweis</button><button id="reset-battle-button">Neue Probe ↻</button></div>
+        <p id="battle-log" class="battle-log" role="status" aria-live="polite">Wähle eine Heldin und ihre Fähigkeit – oder klicke auf die Umgebung.</p>
+      </section>
+      <section class="satchel" id="satchel" aria-label="Reisetasche">
+        <button class="satchel-title satchel-toggle" id="satchel-toggle" aria-expanded="false" aria-controls="satchel-panel"><span aria-hidden="true">♧</span><span><strong>Reisetasche</strong><small id="satchel-counter">0 von 3 eingepackt</small></span><span class="satchel-chevron" aria-hidden="true">⌃</span></button>
+        <div id="satchel-panel" class="satchel-panel" aria-label="Inhalt der Reisetasche" hidden>
+          <div id="inventory" class="inventory"></div>
+          <div class="satchel-pages"><button id="satchel-previous" aria-label="Vorherige Gegenstände">←</button><span id="satchel-page" role="status"></span><button id="satchel-next" aria-label="Weitere Gegenstände">→</button></div>
+        </div>
+        <button id="hint-button" class="hint-button">✧ Ein kleiner Hinweis</button>
+      </section>
+      <div class="journey-tools"><span id="save-status"></span><button id="journal-button" hidden>Reisebuch</button><button id="chapters-button" hidden>Kapitel</button><button id="save-button" hidden>Speichern</button></div>
+      <footer class="game-footer"><span id="context-label">Eine Geschichte über Mut und Freundschaft</span><span><kbd>↑ ↓ ← →</kbd> oder <kbd>W A S D</kbd> laufen <i>·</i> <kbd>Enter</kbd> benutzen <i>·</i> <kbd>H</kbd> Hinweise</span><button id="restart-button">Neu beginnen ↻</button></footer>
+      <nav id="chapter-navigation" class="chapter-navigation" aria-label="Kapitel direkt auswählen">
+        <button id="chapter-toggle" aria-expanded="false" aria-controls="chapter-picker">Kapitel wählen ▴</button><span id="chapter-current">Farbenquell – Finas Aufbruch</span>
+        <div id="chapter-picker" class="chapter-picker" hidden><div class="chapter-picker-heading"><strong>Wohin möchtest du reisen?</strong><button id="chapter-close" aria-label="Kapitelwahl schließen">×</button></div><p>Beginne am gewählten Ort mit den nötigen Reisegegenständen.</p><div id="chapter-choices" class="chapter-choices"></div><div class="chapter-pages"><button id="chapter-previous" aria-label="Vorherige Kapitel">←</button><span id="chapter-page" role="status"></span><button id="chapter-next" aria-label="Weitere Kapitel">→</button></div></div>
+      </nav>
+    </main>
+    <dialog id="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
