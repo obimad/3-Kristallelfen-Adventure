@@ -1,4 +1,5 @@
 // Deliberate object closeups. Unmapped details must never fall back to an entire scene.
+import { propArtwork } from './prop-art.js';
 const detail = (file, alt) => Object.freeze({ src: `assets/details/${file}.svg`, alt, fit: 'contain', kind: 'detail' });
 export const INSPECTIONS = Object.freeze({
   cirrus_clouds: detail('cloud-sheep', 'Nahansicht: ein kleines Wolkenschäfchen mit dunklem Gewitterbauch'),
@@ -43,5 +44,8 @@ export function getInspection(scene, hotspot) {
   if (!scene || !hotspot) return null;
   if (scene.id === 'farbenquell') return OPENING_INSPECTIONS[hotspot.id] ?? null;
   if (hotspot.type !== 'inspect') return null;
-  return INSPECTIONS[hotspot.id] ?? null;
+  if(hotspot.prop)return {...detail(hotspot.artId??hotspot.id,`Nahansicht: ${hotspot.prop.name}. Untersuche die Form, die Spuren und die zugänglichen Teile.`),art:propArtwork(hotspot.artId??hotspot.id)};
+  const alias={workshop_flake:'sand_growth',observatory_door:'observatory_mirrors'};
+  const id=hotspot.artId??hotspot.id;
+  return INSPECTIONS[id] ?? INSPECTIONS[alias[id]] ?? null;
 }

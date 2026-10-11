@@ -4,12 +4,13 @@ export function createChapterMusic({onStatus=()=>{},audioFactory=()=>new Audio()
   let audio,playlist=[],index=0,active=false;
   function current(enable=false){
     if(!active||!playlist[index])return;
-    audio.src=`Musik/Original/${playlist[index]}.mp3`;
-    onStatus(`Originalsoundtrack · Stück ${playlist[index]}${playlist.length>1?` · ${index+1}/${playlist.length}`:''}`);
+    const track=playlist[index],original=/^\d{2}$/.test(track);
+    audio.src=original?`Musik/Original/${track}.mp3`:track;
+    onStatus(original?`Originalsoundtrack · Stück ${track}${playlist.length>1?` · ${index+1}/${playlist.length}`:''}`:'Spielmusik · Mucks Begegnung');
     beginSceneSoundtrack(audio,{enable});
   }
   function play(numbers,{enable=false,loop=false}={}){
-    playlist=numbers.filter(number=>/^\d{2}$/.test(number));index=0;
+    playlist=numbers.filter(number=>/^\d{2}$/.test(number)||/^Musik\/\d{2}[-_ ][^/\\]+\.mp3$/.test(number));index=0;
     if(!playlist.length){stop();return;}
     if(!audio){
       audio=audioFactory();audio.id='chapter-music';audio.hidden=true;audio.loop=false;

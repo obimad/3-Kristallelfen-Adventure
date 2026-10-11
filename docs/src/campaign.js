@@ -131,6 +131,9 @@ export function restoreCampaign(raw, scenes = SCENES, items = STORY_ITEMS) {
   if (!scenes.some(scene => scene.id === raw.sceneId)) return null;
   const arrayFields = ['inventory', 'flags', 'companions', 'viewed', 'journal', 'completedScenes'];
   if (!arrayFields.every(field => Array.isArray(raw[field]) && raw[field].every(id => typeof id === 'string') && new Set(raw[field]).size === raw[field].length)) return null;
+  // Old acknowledged exits remain valid. Newly added side quests are required
+  // for future exits, but cannot invalidate a journey already played before them.
+  scenes=scenes.map(scene=>({...scene,hotspots:scene.hotspots.map(h=>({...h,requiresFlags:(h.requiresFlags??[]).filter(flag=>!h.revisionFlags?.includes(flag)||raw.flags.includes(flag))}))}));
   const allHotspots = scenes.flatMap(scene => scene.hotspots);
   const knownItems = new Set(['bag', 'crystal', 'letter', ...Object.keys(items), ...allHotspots.flatMap(h => [...(h.giveItems ?? []), ...(h.removeItems ?? []), ...(h.item ? [h.item] : [])])]);
   const knownFlags = new Set(allHotspots.flatMap(h => [...(h.setFlags ?? []), ...(h.requiresFlags ?? [])]));

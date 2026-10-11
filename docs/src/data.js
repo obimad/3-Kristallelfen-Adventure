@@ -5,9 +5,19 @@ export const HEROES = [
   {id:'fina',name:'Fina',color:'#e2b0ff',symbol:'✦',ring:'Farbwechsel',subtitle:'Die Mutige'}
 ];
 export const ASSETS = {
-  background:'assets/farbenquell-animierbar.png',trainingBackground:'Bilder/freepik__a-highquality-digital-comic-book-illustration-in-1__61026.png',finaWalk:'assets/fina-walk.png',finaDepthWalk:'assets/fina-depth-walk.png',cloudsea:'assets/wolkenmeer.png',
+  finaHome:'assets/fina-cottage-interior.png',vividWalk:'assets/vivid-walk.png',
+  castTravelWalk:'assets/cast-travel-walk.png',castH2oWalk:'assets/cast-h2o-walk.png',
+  castRoyalWalk:'assets/cast-royal-walk-v2.png',castMastersWalk:'assets/cast-masters-walk.png',elfWalkFull:'assets/elf-walk-separated.png',
+  departureProps:'assets/farbenquell-props.png',
+  adventureProps:'assets/adventure-props.png',adventureTools:'assets/adventure-tools.png',
+  cloudGlider:'assets/cloud-glider-flight.png',
+  distantGliders:'assets/cloud-gliders-distant.png',
+  sandWorkers:'assets/sand-workers.png',
+  letterSequence:'assets/letter-drenching.png',
+  elfWalk:'assets/elf-walk.png',
+  background:'assets/farbenquell-animierbar.png',trainingBackground:'Bilder/freepik__a-highquality-digital-comic-book-illustration-in-1__61026.png',finaWalk:'assets/fina-walk.png',finaDepthWalk:'assets/fina-depth-walk-v2.png',cloudsea:'assets/wolkenmeer.png',
   fina:'assets/fina.png',icy:'assets/icy.png',powdery:'assets/powdery.png',cold:'assets/cold.png',
-  muck:'assets/muck.png',
+  muck:'assets/muck-flight.png',
   colorida:'Bilder/freepik__img1-mach-die-frau-jnger-18-jahre-jung__9913.png',coloridaSprite:'assets/colorida.png',
   vivid:'Bilder/freepik__a-highquality-digital-comic-book-illustration-in-1__4917.png',vividSprite:'assets/vivid.png',
   group:'Bilder/freepik__entferne-die-elefenohren-der-linken-blonden-person__33837.png'

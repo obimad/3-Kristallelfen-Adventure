@@ -1,6 +1,11 @@
 // Eigenständige Spieladaption der Romanhandlung. Keine wörtlichen Buchzitate.
 // Kleine Ordnungs-, Auswahl- und Inventarrätsel sind ausdrücklich Spieladaptionen.
-// Kämpfe werden vorläufig erzählt: keine Gesundheit, Runden oder Zeitlimits.
+// Die UI inszeniert die Begegnungen als wiederholbare Action-Minispiele.
+import { expandStory } from './story-expansion.js';
+import { clarifyStory } from './story-clarity.js';
+import { weaveAdventure } from './story-adventure.js';
+import { prepareStagedStory } from './story-staging.js';
+import {addStoryMoments} from './story-moments.js';
 export const STORY_ITEMS = {
   bag: { name: 'Reisetasche', icon: '♧', description: 'Proviant aus Farbenquell und Platz für Erinnerungen.' },
   crystal: { name: 'Silbas Kristall', icon: '◈', description: 'Der Kristall von Finas verschwundener Mutter. Sie würde ihn niemals freiwillig ablegen.' },
@@ -26,7 +31,7 @@ export const STORY_ITEMS = {
 const character = (name, asset) => ({ name, asset, portrait: asset });
 export const STORY_CHARACTERS = {
   fina: character('Fina', 'assets/fina.png'),
-  muck: character('Muck', 'assets/muck.png'),
+  muck: {...character('Muck', 'assets/muck-flight.png'),portrait:'assets/muck.png'},
   cold: character('Cold', 'assets/cold.png'),
   powdery: character('Powdery', 'assets/powdery.png'),
   icy: character('Icy', 'assets/icy.png'),
@@ -38,6 +43,7 @@ export const STORY_CHARACTERS = {
   h: character('H', 'assets/characters/h.png'),
   two: character('2', 'assets/characters/two.png'),
   o: character('O', 'assets/characters/o.png'),
+  nebelwache: character('Nebelwache', 'assets/characters/nebelwache.png'),
   chrysta: character('Chrysta', 'assets/characters/chrysta.png'),
   chrystel: character('Chrystel', 'assets/characters/chrystel.png'),
   christi: character('Christi', 'assets/characters/christi.png'),
@@ -109,7 +115,7 @@ export const SCENES = [
     action('flight_landing', 'Mit Kian durch die Wolken fliegen', 'encounter', 1230, [say('Fina', 'Wir stehen wieder auf einer tragfähigen Wolke. Meine Knie wissen das noch nicht.'), say('Kian', 'Der Karabiner ist gelöst. Gute Reise zur Himmelsstadt!'), say('Fina', 'Danke, Kian. Beim nächsten Mal frage ich zuerst nach der gemütlichen Route.')], { requiresFlags: ['flight_secure'],verb:'Fliegen',icon:'➜',journalText:'Ein Flug mit Kian: Die neue Wolkenstraße abgeschlossen.',hint:'Starte den Flug mit Kian. Lenke Fina durch die freien Lücken zwischen Wolken und Vögeln.' }),
     exit('flight_exit', 'Den Wolkenweg betreten', ['flight_landing'], 'muck'),
   ]),
-  scene('muck', 'Muck, die Mücke', 2, 'Eine kleine Begleiterin mit großen Ansichten', 'weide', '06', [actor('muck', 890, 610, 110)], [
+  scene('muck', 'Muck, die Mücke', 2, 'Eine kleine Begleiterin mit großen Ansichten', 'muck-landing', '06', [actor('muck', 890, 610, 110)], [
     say('Fina', 'Endlich wieder allein und ganz still …'),
     say('Muck', 'Still? Nach dieser Landung? Deine Knie haben laut geklappert!'),
     say('Fina', 'Wer spricht da?'),
@@ -118,7 +124,7 @@ export const SCENES = [
     talk('muck_meet', 'Muck kennenlernen', 890, [say('Fina', 'Ich bin Fina. Auf dem Weg zur Himmelsstadt.'), say('Muck', 'Ich könnte mitkommen. Allein herumsummen ist auf Dauer ein ziemlich kurzes Gespräch.'), say('Fina', 'Ich würde mich über Gesellschaft freuen. Aber wir stechen unterwegs nicht einfach jeden.')], { y: 455 }),
     talk('muck_nature', 'Über Mücken und Magie sprechen', 890, [say('Muck', 'Elfenzauber? Damit habe ich nichts zu tun. Ich bin eine Mücke, kein glitzernder Wassertropfen.'), say('Fina', 'Und Wasser?'), say('Muck', 'Igitt. Wenn mein Rüssel eine Speisekarte hätte, wäre Wasser durchgestrichen. Dreimal.')], { y: 455, requiresFlags: ['muck_meet'] }),
     inspect('muck_route', 'Straße zu den Sandfängern', 1220, [say('Fina', 'Der Weg führt zu großen Netzen. Wir gehen auf der breiten Wolkenfläche.'), say('Muck', 'Ich fliege neben dir. Das nennt man bequemes Spazierengehen.')]),
-    puzzle('muck_agreement', 'Gemeinsam weiterreisen', 660, 'choice', 'Welche Abmachung passt zu Finas Reise?', [option('friends', 'Gemeinsam reisen; andere erst ansprechen'), option('sting', 'Jede unbekannte Elfe sofort stechen'), option('water', 'Muck muss Wassermagie lernen')], ['friends'], 'Muck nickt, richtet ihre Brille und schließt sich Fina an. Von nun an fliegt sie bei der Erkundung mit.', 'Muck: Ich habe meine Flügel schon dabei. Für Freundschaft brauche ich weder einen Zauberkurs noch eine allgemeine Stecherlaubnis.', { requiresFlags: ['muck_meet', 'muck_nature', 'muck_route'], addCompanions: ['muck'] }),
+    puzzle('muck_agreement', 'Gemeinsam weiterreisen', 890, 'choice', 'Welche Abmachung passt zu Finas Reise?', [option('friends', 'Gemeinsam reisen; andere erst ansprechen'), option('sting', 'Jede unbekannte Elfe sofort stechen'), option('water', 'Muck muss Wassermagie lernen')], ['friends'], 'Muck nickt, richtet ihre Brille und schließt sich Fina an. Von nun an fliegt sie bei der Erkundung mit.', 'Muck: Ich habe meine Flügel schon dabei. Für Freundschaft brauche ich weder einen Zauberkurs noch eine allgemeine Stecherlaubnis.', { y:455, actorId:'muck', conversation:true, verb:'Sprechen', hint:'Schließe den Hinweis und klicke auf die Sprechblase über Muck. Dort besprecht ihr eure gemeinsame Reise.', requiresFlags: ['muck_meet', 'muck_nature', 'muck_route'], addCompanions: ['muck'] }),
     exit('muck_exit', 'Zu den Sandfängern', ['muck_agreement'], 'sandfaenger'),
   ]),
   scene('sandfaenger', 'Die Sandfänger', 2, 'Wie winzige Körner dem Schnee helfen', 'sandfaenger', '07', [], [
@@ -157,7 +163,7 @@ export const SCENES = [
     puzzle('cold_note', 'Den ersten Termin merken', 700, 'choice', 'Wann erwartet Cold Fina?', [option('middle', 'Zur Lichtmitte'), option('before', 'Vor Lichtmitte'), option('after', 'Kurz nach Lichtmitte')], ['middle'], 'Du merkst dir Colds Termin. Beim hastigen Umdrehen gerät dein Stiefel auf den Saum eines kostbaren Mantels.', 'Muck: Cold war ziemlich präzise. Lichtmitte – ohne vorher und ohne nachher.', { requiresFlags: ['cold_challenge', 'cold_column'] }),
     exit('cold_exit', 'Der nassen Spur folgen', ['cold_note'], 'powdery'),
   ]),
-  scene('powdery', 'Zweite Begegnung: Powdery', 3, 'Der Mantel hat eine Meinung', 'himmelsstadt', '11', [actor('powdery', 1040)], [
+  scene('powdery', 'Zweite Begegnung: Powdery', 3, 'Der Mantel hat eine Meinung', 'powdery-gasse', '11', [actor('powdery', 1040)], [
     say('Powdery', 'Mein Mantel! Ein perfekter Stiefelabdruck auf meinem besten Stoff!'),
     say('Fina', 'Das war keine Absicht. Wirklich.'),
     say('Muck', 'Zumindest ist es ein sehr deutlicher Abdruck. Man könnte ihn signieren.'),
@@ -169,7 +175,7 @@ export const SCENES = [
     puzzle('powdery_response', 'Den Mantel nicht weiter beschädigen', 620, 'choice', 'Was hilft in diesem Moment?', [option('acknowledge', 'Den Schaden anerkennen und den Termin merken'), option('scrub', 'Mit dem nassen Schreiben kräftig schrubben'), option('sand', 'Sandkörner auf dem Stoff verteilen')], ['acknowledge'], 'Du lässt den Mantel in Ruhe und merkst dir den zweiten Termin. Hinter der nächsten Gasse glaubt Muck die Wachen wiederzusehen.', 'Powdery: Mein Mantel ist kein Probentisch! Eine Entschuldigung verträgt er besser als noch mehr Flecken.', { requiresFlags: ['powdery_hem', 'powdery_challenge'] }),
     exit('powdery_exit', 'In die nächste Gasse', ['powdery_response'], 'icy'),
   ]),
-  scene('icy', 'Dritte Begegnung: Icy', 3, 'Ein Gedicht und drei Termine', 'himmelsstadt', '12', [actor('icy', 1040)], [
+  scene('icy', 'Dritte Begegnung: Icy', 3, 'Ein Gedicht und drei Termine', 'icy-leseplatz', '12', [actor('icy', 1040)], [
     say('Icy', '… und das Licht ruhte leise auf dem Eis …'),
     say('Fina', 'Verzeihung! Ich suche zwei Regenwachen!'),
     say('Icy', 'Gerade suchte diese Straße einen stillen Augenblick.'),
@@ -225,7 +231,7 @@ export const SCENES = [
   ], [
     inspect('plot_orders', 'Regis’ Befehl', 430, [say('Lord Regis', 'Ein gemeinsames Training – und dann verriegelte Ausgänge. Die Beschützerinnen sollen meiner Krönung nicht im Weg stehen.'), say('2', 'Eine Falle als Terminplan. Sehr übersichtlich.')]),
     talk('plot_water', 'Regis’ Ziel', 1030, [say('Lord Regis', 'Kein Eis mehr. Kein Schnee. Nur Wasser unter meiner Herrschaft.'), say('2', 'Kein Widerstand, keine Kristallfee. Ein einfacher Plan.'), say('Erzählung', 'Die Wünsche vieler Elfen und der Schnee haben darin keinen Platz.')]),
-    inspect('plot_arena', 'Die versiegelte Sturmarena', 1260, [say('Erzählung', 'Die Nebelwache umstellt die Arena. Die hineingelockten Kristallelfen werden gefangen genommen.')], { requiresFlags: ['plot_orders'] }),
+    inspect('plot_arena', 'Die versiegelte Sturmarena', 1260, [say('Erzählung', 'Die Nebelwache bezieht Stellung an der Arena. Noch sind die Ausgänge offen. Regis lässt die Falle für das angekündigte Training vorbereiten.')], { requiresFlags: ['plot_orders'] }),
     puzzle('plot_understand', 'Die Falle verstehen', 800, 'choice', 'Was ist an diesem Trainingsbefehl gefährlich?', [option('trap', 'Er versammelt die Beschützerinnen hinter verschlossenen Ausgängen'), option('time', 'Er beginnt besonders früh'), option('sport', 'Er enthält zu wenig Aufwärmen')], ['trap'], 'Regis hat die meisten Beschützerinnen ausgeschaltet. Sein nächstes Ziel ist der Thron der Kristallfee.', 'Erzählung: Die entscheidenden Ausgänge werden verriegelt. Darin liegt die Falle.', { requiresFlags: ['plot_water', 'plot_arena'] }),
     exit('plot_exit', 'Zum Thronsaal wechseln', ['plot_understand'], 'thronsturz'),
   ]),
@@ -365,3 +371,13 @@ export const SCENES = [
     exit('epilogue_end', 'Die Geschichte abschließen', ['epilogue_promise'], null, { verb: 'Ende', icon: '✦', description: 'Fina, Cold, Powdery und Icy sind die vier Eisklingen. Silba lebt, die Kristallfee regiert wieder, und Muck hat ihren Platz bei ihnen gefunden. Die Himmelsstadt ist frei. Ende.', repeatText: 'Die Geschichte ist abgeschlossen. Die vier Eisklingen und Muck bleiben ein Team.' }),
   ]),
 ];
+expandStory(SCENES, STORY_ITEMS);
+clarifyStory(SCENES);
+weaveAdventure(SCENES);
+prepareStagedStory(SCENES);
+SCENES.find(scene=>scene.id==='befreiung').background='assets/story/befreiung-kammer.png';
+SCENES.find(scene=>scene.id==='epilog').background='assets/story/epilog-balkon.png';
+// The new balcony artwork already contains the open travel journal on its desk.
+SCENES.find(scene=>scene.id==='epilog').hotspots.find(h=>h.id==='explore_epilog_detail').nativeArtwork=true;
+SCENES.find(scene=>scene.id==='epilog').hotspots.find(h=>h.id==='epilogue_promise').puzzle.successText='Die vier Eisklingen stehen mit Silba und Muck auf dem Balkon über dem Wolkenmeer. Die Stadt ist frei, Finas Mutter ist zurück und die Freundschaft bleibt. Ihre Reise hat sie zusammengeführt.';
+addStoryMoments(SCENES);

@@ -1,11 +1,12 @@
-let enabled=false,context,music,sceneSoundtrack,tracks={},trackNumber='01',volume=.35;
+let enabled=false,context,music,sceneSoundtrack,tracks={},trackNumber='01',volume=.35,backgroundMusicActive=true;
 export async function loadMusic(){
   for(const path of ['Musik/manifest.json','/api/music']){
     try{const response=await fetch(path);if(response.ok){tracks=await response.json();break;}}catch{}
   }
-  if(enabled&&!sceneSoundtrack)playMusic(trackNumber);
+  if(enabled&&!sceneSoundtrack&&backgroundMusicActive)playMusic(trackNumber);
 }
 export function playMusic(number='01'){
+  backgroundMusicActive=true;
   trackNumber=String(number).padStart(2,'0');
   if(sceneSoundtrack)return;
   const src=tracks[trackNumber];
@@ -17,9 +18,26 @@ export function playMusic(number='01'){
 }
 export function setMusicVolume(value){volume=Math.min(1,Math.max(0,Number(value)||0));if(music)music.volume=volume;if(sceneSoundtrack)sceneSoundtrack.volume=volume;}
 export function soundEnabled(){return enabled;}
+export async function autoplaySound({target=document,onChange=()=>{}}={}){
+  const audio=sceneSoundtrack??music;
+  if(!audio)return;
+  let waiting=true;
+  function cleanup(){waiting=false;target.removeEventListener('pointerdown',activate,true);target.removeEventListener('keydown',activate,true);}
+  function activate(event){
+    cleanup();
+    if(event.target?.closest?.('#sound-button'))return;
+    if(!enabled)toggleSound();
+    onChange();
+  }
+  target.addEventListener('pointerdown',activate,true);
+  target.addEventListener('keydown',activate,true);
+  enabled=true;
+  try{await audio.play();if(waiting){cleanup();onChange();}}
+  catch{if(waiting){enabled=false;onChange();}}
+}
 export function beginSceneSoundtrack(audio,{enable=false}={}){if(enable)enabled=true;music?.pause();sceneSoundtrack=audio;audio.volume=volume;if(enabled)audio.play().catch(()=>{});}
-export function endSceneSoundtrack(audio){if(sceneSoundtrack!==audio)return;audio.pause();sceneSoundtrack=null;if(enabled)playMusic(trackNumber);}
-export function toggleSound(){enabled=!enabled;if(enabled){if(sceneSoundtrack)sceneSoundtrack.play().catch(()=>{});else{loadMusic();playMusic(trackNumber);}}else{music?.pause();sceneSoundtrack?.pause();}return enabled;}
+export function endSceneSoundtrack(audio){if(sceneSoundtrack!==audio)return;audio.pause();music?.pause();sceneSoundtrack=null;backgroundMusicActive=false;}
+export function toggleSound(){enabled=!enabled;if(enabled){if(sceneSoundtrack)sceneSoundtrack.play().catch(()=>{});else if(backgroundMusicActive){loadMusic();playMusic(trackNumber);}}else{music?.pause();sceneSoundtrack?.pause();}return enabled;}
 export function chime(kind='item'){
   if(!enabled)return;
   try{

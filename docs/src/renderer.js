@@ -1,11 +1,17 @@
-import { ASSETS, HEROES } from './data.js';
-import { idlePose } from './animation.js';
+import { ASSETS, HEROES, HOTSPOTS } from './data.js';
+import { idlePose, drawQuietSprite, heroView } from './animation.js';
+import {prepareSpriteFrames,drawSpriteFrame} from './sprite-frames.js';
+import { drawWorldLife } from './world-life.js';
+import {drawPaintedProp} from './prop-art.js';
+import {openingTargets} from './opening-chapter.js';
+import {openingActorHeight} from './opening-perspective.js';
 
 export async function loadImages(){
   const images={};
   await Promise.all(Object.entries(ASSETS).map(([id,url])=>new Promise((resolve,reject)=>{
     const img=new Image();img.onload=()=>{images[id]=img;resolve();};img.onerror=()=>reject(new Error(`Das Bild „${id}“ konnte nicht geladen werden (${url}).`));img.src=url;
   })));
+  for(const id of ['finaWalk','finaDepthWalk','vividWalk','castTravelWalk','castH2oWalk','castRoyalWalk','castMastersWalk','elfWalkFull'])prepareSpriteFrames(images[id],4,id.startsWith('fina')?2:3);
   return images;
 }
 function shadow(ctx,x,y,w){ctx.save();ctx.fillStyle='#153f5744';ctx.beginPath();ctx.ellipse(x,y,w,9,0,0,Math.PI*2);ctx.fill();ctx.restore();}
@@ -16,26 +22,27 @@ function sprite(ctx,img,x,y,height,bob=0){
   ctx.drawImage(img,x-width/2,y-height+bob,width,height);
 }
 function waitingSprite(ctx,img,x,y,height,time,phase,reducedMotion){
-  const pose=idlePose(time,phase,reducedMotion);
-  ctx.save();ctx.translate(x,y);ctx.rotate(pose.tilt);ctx.scale(1,pose.scaleY);
-  sprite(ctx,img,0,0,height);ctx.restore();
+  if(!img)return;
+  const width=height*img.width/img.height;
+  shadow(ctx,x,y-5,width*.27);
+  drawQuietSprite(ctx,img,x-width/2,y-height,width,height,time,phase,reducedMotion);
 }
-function table(ctx,adventure){
-  ctx.save();
-  ctx.fillStyle='#465d71';ctx.strokeStyle='#233d54';ctx.lineWidth=5;
-  ctx.beginPath();ctx.moveTo(335,675);ctx.lineTo(570,675);ctx.lineTo(590,755);ctx.lineTo(360,755);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.fillStyle='#a7866e';ctx.beginPath();ctx.moveTo(330,674);ctx.lineTo(532,642);ctx.lineTo(588,698);ctx.lineTo(366,731);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.fillStyle='#635955';ctx.fillRect(357,739,13,65);ctx.fillRect(554,710,12,64);
-  for(const [i,color] of ['#bf5967','#579fc8','#e6bc62'].entries()){
-    ctx.fillStyle=color;ctx.fillRect(425+i*34,658-i*4,25,24);ctx.fillStyle='#d4e5df';ctx.fillRect(422+i*34,654-i*4,31,7);ctx.strokeRect(425+i*34,658-i*4,25,24);
-  }
-  if(!adventure.inventory.includes('bag')){
-    ctx.fillStyle='#795a43';ctx.strokeStyle='#3a3a3a';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(420,715,66,43,8);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(453,717,16,Math.PI,0);ctx.stroke();ctx.strokeRect(447,733,12,12);
-  }
-  if(!adventure.inventory.includes('crystal')){
-    ctx.fillStyle='#c6eafa';ctx.strokeStyle='#618ca6';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(559,678);ctx.lineTo(573,698);ctx.lineTo(559,718);ctx.lineTo(545,698);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(559,680);ctx.lineTo(559,715);ctx.stroke();
-  }
-  ctx.restore();
+function walkingVivid(ctx,images,x,y,height,time,dx,dy,reduced){
+ if(reduced||!images.vividWalk){waitingSprite(ctx,images.vividSprite,x,y,height,time,0,true);return;}
+ const sheet=images.vividWalk;
+ const vertical=Math.abs(dy)>Math.abs(dx)*1.2,row=vertical?(dy<0?2:1):0,frame=Math.floor(time/150)%4;
+ ctx.save();ctx.translate(x,y);if(!vertical&&dx<0)ctx.scale(-1,1);shadow(ctx,0,-5,height*.16);
+ if(!drawSpriteFrame(ctx,sheet,frame,row,height))waitingSprite(ctx,images.vividSprite,0,0,height,time,0,true);ctx.restore();
+}
+function table(ctx,adventure,atlas){
+  if(!atlas)return;
+  const cellW=atlas.width/2,cellH=atlas.height/2;
+  const layer=(column,row,x,y,width,height)=>ctx.drawImage(atlas,column*cellW,row*cellH,cellW,cellH,x,y,width,height);
+  // Separate painted sprites: collected objects leave the tabletop clear.
+  layer(0,0,310,610,300,220);
+  layer(1,0,405,625,120,70);
+  if(!adventure.inventory.includes('bag'))layer(0,1,405,683,90,85);
+  if(!adventure.inventory.includes('crystal'))layer(1,1,531,665,55,70);
 }
 function battleEnvironment(ctx,b,time,reducedMotion){
   const wave=reducedMotion?0:Math.sin(time/700)*5;
@@ -144,28 +151,48 @@ function atmosphere(ctx,background,time,reducedMotion){
   }
 }
 export function drawScene(ctx,images,state,time){
-  ctx.clearRect(0,0,1600,900);ctx.drawImage(state.mode==='battle'?images.trainingBackground:images.background,0,0,1600,900);
-  if(state.mode==='journey')atmosphere(ctx,images.background,time,state.reducedMotion);
+  const area=state.adventure.opening?.area??'home';
+  ctx.clearRect(0,0,1600,900);
+  if(state.mode==='battle')ctx.drawImage(images.trainingBackground,0,0,1600,900);
+  else if(state.started&&area==='edge')ctx.drawImage(images.cloudsea,0,0,1600,900);
+  else if(state.started&&area==='home')ctx.drawImage(images.finaHome,0,0,1600,900);
+  else ctx.drawImage(images.background,0,0,1600,900);
+  if(state.mode==='journey'&&(!state.started||area==='square'))atmosphere(ctx,images.background,time,state.reducedMotion);
+  if(state.mode==='journey'&&area!=='home')drawWorldLife(ctx,area==='edge'?'kumulus':'farbenquell',time,state.reducedMotion);
   if(state.mode==='battle'){
     drawBattle(ctx,images,state,time);
     return;
   }
   if(!state.started)return;
-  const entities=[{y:760,draw:()=>table(ctx,state.adventure)},{y:740,draw:()=>waitingSprite(ctx,images.vividSprite,595,740,270,time,0,state.reducedMotion)}, {y:770,draw:()=>waitingSprite(ctx,images.coloridaSprite,1070,770,290,time,2,state.reducedMotion)}, {y:state.position.y,draw:()=>{
-    const height=240+(state.position.y-600)*.13;
+  const vividX=area==='square'?755:area==='edge'?650:740,vividY=area==='square'?750:785;
+  const arrival=state.openingArrival,progress=arrival?Math.min(1,(time-arrival.started)/Math.max(1,arrival.duration)):1;
+  const vx=state.openingTransition?.vivid?.x??(arrival?1420+(vividX-1420)*progress:vividX);
+  const vy=state.openingTransition?.vivid?.y??(arrival&&area==='home'?550+(vividY-550)*progress:vividY);
+  const entities=[
+   ...(area==='home'?[{y:760,draw:()=>table(ctx,state.adventure,images.departureProps)}]:[]),
+   ...(state.adventure.opening?.vividArrived?[{y:vy,draw:()=>{const height=openingActorHeight(area,'vivid',vy);const transition=state.openingTransition;if(arrival||transition)walkingVivid(ctx,images,vx,vy,height,time,transition?.vivid?.dx??-680,transition?.vivid?.dy??180,state.reducedMotion);else waitingSprite(ctx,images.vividSprite,vx,vy,height,time,0,state.reducedMotion);}}]:[]),
+   ...(area==='square'?[{y:770,draw:()=>waitingSprite(ctx,images.coloridaSprite,1030,770,openingActorHeight(area,'colorida',770),time,2,state.reducedMotion)},{y:695,draw:()=>{
+    drawPaintedProp(ctx,images,{id:'sandfaenger_tool',x:590,y:660},false);
+    const first=state.adventure.opening?.bowl?.[0];
+    if(first||state.adventure.mixed){ctx.save();ctx.fillStyle=state.adventure.mixed?'#ad68d7':first==='red'?'#e86b8a':first==='blue'?'#72b9e5':'#f5cd75';ctx.globalAlpha=.8;ctx.beginPath();ctx.ellipse(590,643,32,9,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+    const pour=state.openingPour;
+    if(pour&&time-pour.started<1000){ctx.save();ctx.strokeStyle=pour.colour==='red'?'#e86b8a':pour.colour==='blue'?'#72b9e5':'#f5cd75';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(588,605);ctx.lineTo(590,645);ctx.stroke();ctx.restore();}
+   }}]:[]),
+   {y:state.position.y,draw:()=>{
+    const height=openingActorHeight(area,'fina',state.position.y);
     ctx.save();ctx.translate(state.position.x,state.position.y);
-    if(state.view==='side')ctx.scale(state.facing,1);
-    if(state.view!=='side'){
-      const sheet=images.finaDepthWalk,cellW=sheet.width/4,cellH=sheet.height/2,frame=state.moving&&!state.reducedMotion?Math.floor(state.walkFrame/2):0,width=height*cellW/cellH;
-      const pose=idlePose(time,4,state.moving||state.reducedMotion);ctx.rotate(pose.tilt);ctx.scale(1,pose.scaleY);
-      shadow(ctx,0,-5,width*.27);ctx.drawImage(sheet,frame*cellW,(state.view==='back'?1:0)*cellH,cellW,cellH,-width/2,-height,width,height);
-    }else if(state.moving&&!state.reducedMotion){
-      const sheet=images.finaWalk,cellW=sheet.width/4,cellH=sheet.height/2,frame=state.walkFrame,width=height*cellW/cellH;
-      shadow(ctx,0,-5,width*.27);ctx.drawImage(sheet,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,-width/2,-height,width,height);
+    const view=heroView(state);
+    if(view==='side')ctx.scale(state.facing,1);
+    if(state.moving&&!state.reducedMotion){
+      const side=view==='side',frame=side?state.walkFrame:Math.floor(state.walkFrame/2);
+      shadow(ctx,0,-5,height*.16);
+      if(!drawSpriteFrame(ctx,side?images.finaWalk:images.finaDepthWalk,frame%4,side?Math.floor(frame/4):view==='back'?1:0,height))waitingSprite(ctx,images.fina,0,0,height,time,4,true);
     }else waitingSprite(ctx,images.fina,0,0,height,time,4,state.reducedMotion);
     ctx.restore();
   }}];
   entities.sort((a,b)=>a.y-b.y).forEach(e=>e.draw());
+  const hovered=openingTargets(state.adventure).find(h=>h.id===state.hoveredId&&h.type!=='person');
+  if(hovered){ctx.save();ctx.globalCompositeOperation='screen';const glow=ctx.createRadialGradient(hovered.x,hovered.y,4,hovered.x,hovered.y,58);glow.addColorStop(0,'#d2f3ff66');glow.addColorStop(1,'#d2f3ff00');ctx.fillStyle=glow;ctx.fillRect(hovered.x-58,hovered.y-58,116,116);ctx.restore();}
   // Muck trifft Fina erst auf der Reise, nicht im Abschiedskapitel Farbenquell.
   if(state.destination){ctx.save();ctx.strokeStyle='#fff0be';ctx.lineWidth=2;ctx.globalAlpha=.8;ctx.beginPath();ctx.ellipse(state.destination.x,state.destination.y,12,5,0,0,7);ctx.stroke();ctx.restore();}
 }

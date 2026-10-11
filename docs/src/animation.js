@@ -4,7 +4,17 @@ export function viewDirection(delta,previous){
   if(Math.hypot(delta.x,delta.y)<.01)return previous;
   return Math.abs(delta.y)>Math.abs(delta.x)?(delta.y<0?'back':'front'):'side';
 }
+export const heroView=state=>state.moving?state.view:'front';
 export function idlePose(time,phase=0,reducedMotion=false){
-  if(reducedMotion)return {scaleY:1,tilt:0};
-  return {scaleY:1+.009*Math.sin(time/3200*Math.PI*2+phase),tilt:.006*Math.sin(time/5500*Math.PI*2+phase)};
+  return {scaleY:1,tilt:0};
+}
+/** Keep head and feet fixed; only a small part of the clothing shifts below a pixel. */
+export function drawQuietSprite(ctx,img,x,y,width,height,time,phase=0,reduced=false){
+  if(reduced){ctx.drawImage(img,x,y,width,height);return;}
+  const bands=24,swing=Math.sin(time/6000+phase)*.65;
+  for(let band=0;band<bands;band++){
+    const p=(band+.5)/bands,envelope=p>.42&&p<.84?Math.sin((p-.42)/.42*Math.PI):0;
+    const sy=band*img.height/bands,sh=img.height/bands;
+    ctx.drawImage(img,0,sy,img.width,sh,x+envelope*swing,y+band*height/bands,width,height/bands);
+  }
 }
